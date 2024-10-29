@@ -1,9 +1,11 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import ast
+import json
 from rich.console import Console
 from rich.prompt import Prompt
 from rich.panel import Panel
+from rich import box
 
 class InteractivePlotter:
     def __init__(self,  params = None, custom_formula = None, title = "Plot", xlabel = "xAxis", ylabel = "yAxis", grid = True):
@@ -57,14 +59,16 @@ class InteractivePlotter:
         self.plot()
 
     def show_settings(self):
+        """Display current settings."""
         label_str = "\n".join([f"({label['x']}, {label['y']}) -> '{label['text']}'" for label in self.labels]) or "No labels added."
 
-        self.console.print(Panel(f"[cyan]Current Settings[/cyan]\n"
-                                 f"Parameters: {self.params}\n"
-                                 f"Formula: y = {self.custom_formula}",
-                                 f"Labels: {label_str}\n",
-                                 title="Settings", style="bold green"))
-    
+        self.console.print(Panel(
+            f"[cyan]Current Settings[/cyan]\n"
+            f"Parameters: {self.params}\n"
+            f"Formula: y = {self.custom_formula}\n"
+            f"Labels:\n{label_str}",
+            title="Settings", style="bold green", box=box.ROUNDED))
+        
 
     def add_label(self, label_data):
         try:
@@ -79,6 +83,42 @@ class InteractivePlotter:
                 self.console.print("[red]Invalid label format! Use: label {'x': value, 'y': value, 'text': 'label text'}[/red]")
         except Exception as e:
             self.console.print(f"[red]Error adding label: {e}[/red]")
+
+    def save(self, filename):
+        try:
+            state = {
+                "params": self.params,
+                "formula": self.custom_formula,
+                "labels": self.labels,
+                "title": self.title,
+                "xlabel": self.xlabel,
+                "ylabel": self.ylabel,
+                "grid": self.grid
+            }
+            with open(filename, 'w') as f:
+                json.dump(state, f, indent=4)
+            self.console.print(f"[green]State saved to '{filename}'[/green]")
+        except Exception as e:
+            self.console.print(f"[red]Error saving state: {e}[/red]")
+    
+    def load_state(self, filename):
+        try:
+            with open(filename, 'r') as f:
+                state = json.load(f)
+            
+            self.params = state.get("params", {})
+            self.custom_formula = state.get("formula", "a * np.sin(b * x)")
+            self.labels = state.get("labels", [])
+            self.title = state.get("title", "Plot")
+            self.xlabel = state.get("xlabel", "X-axis")
+            self.ylabel = state.get("ylabel", "Y-axis")
+            self.grid = state.get("grid", True)
+            
+            self.console.print(f"[green]State loaded from '{filename}'[/green]")
+            self.plot()
+        except Exception as e:
+            self.console.print(f"[red]Error loading state: {e}[/red]")
+
 
     def parse_command(self, command):
         if command.startswith("params"):
@@ -112,6 +152,21 @@ class InteractivePlotter:
 
         elif command == "plot":
             self.plot()
+
+        elif command.startswith("save"):
+            filename = command.replace("save", "").strip()
+            if filename:
+                self.save(filename)
+            else:
+                self.console.print("[red]Please provide a filename to save the state![/red]")
+        
+        elif command.startswith("load"):
+            filename = command.replace("load", "").strip()
+            if filename:
+                self.load_state(filename)
+            else:
+                self.console.print("[red]Please provide a filename to load the state from![/red]")
+
 
         elif command == "exit":
             raise KeyboardInterrupt

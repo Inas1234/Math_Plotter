@@ -1,0 +1,19 @@
+{
+    "params": {
+        "a": 1,
+        "b": 2,
+        "frequency": 12
+    },
+    "formula": "a * np.cos(frequency * x)",
+    "labels": [
+        {
+            "x": 3.14,
+            "y": 1,
+            "text": "Max"
+        }
+    ],
+    "title": "Plot",
+    "xlabel": "xAxis",
+    "ylabel": "yAxis",
+    "grid": true
+}
