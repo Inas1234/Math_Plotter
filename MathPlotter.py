@@ -59,7 +59,6 @@ class InteractivePlotter:
         self.plot()
 
     def show_settings(self):
-        """Display current settings."""
         label_str = "\n".join([f"({label['x']}, {label['y']}) -> '{label['text']}'" for label in self.labels]) or "No labels added."
 
         self.console.print(Panel(
@@ -118,6 +117,21 @@ class InteractivePlotter:
             self.plot()
         except Exception as e:
             self.console.print(f"[red]Error loading state: {e}[/red]")
+    
+    def set_single_param(self, new_param):
+        try:
+            if isinstance(new_param, dict) and len(new_param) == 1:
+                key, value = list(new_param.items())[0]
+                if key in self.params:
+                    self.params[key] = value
+                    self.console.print(f"[green]Parameter '{key}' updated to {value}[/green]")
+                    self.plot()
+                else:
+                    self.console.print(f"[red]Parameter '{key}' does not exist in the current parameters![/red]")
+            else:
+                self.console.print("[red]Invalid parameter format! Use: param {'param': value}[/red]")
+        except Exception as e:
+            self.console.print(f"[red]Error updating parameter: {e}[/red]")
 
 
     def parse_command(self, command):
@@ -132,6 +146,36 @@ class InteractivePlotter:
             except (ValueError, SyntaxError):
                 self.console.print("[red]Invalid parameter format! Use: params {'param': value}[/red]")
 
+        elif command.startswith("param"):
+            try:
+                new_param = ast.literal_eval(command.replace("param", "").strip())
+            except (ValueError, SyntaxError):
+                self.console.print("[red]Invalid parameter format! Use: params {'param': value}[/red]")
+
+        elif command.startswith("param"):
+            try:
+                new_param = ast.literal_eval(command.replace("param", "").strip())
+                self.set_single_param(new_param)
+            except (ValueError, SyntaxError):
+                self.console.print("[red]Invalid parameter format! Use: param {'param': value}[/red]")
+
+        elif "=" in command:
+            try:
+                key, value = command.split("=")
+                key = key.strip()
+                value = float(value.strip())
+                if key in self.params:
+                    self.params[key] = value
+                    self.console.print(f"[green]Parameter '{key}' updated to {value}[/green]")
+                    self.plot()
+                else:
+                    self.console.print(f"[red]Parameter '{key}' does not exist in the current parameters![/red]")
+            except ValueError:
+                self.console.print("[red]Invalid parameter format! Use: param {'param': value}[/red]")
+            except Exception as e:
+                self.console.print(f"[red]Error updating parameter: {e}[/red]")
+
+    
         elif command.startswith("y ="):
             formula = command.replace("y =", "").strip()
             self.set_formula(formula)
